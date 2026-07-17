@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magnum CPA PC — Service Builder</title>
+
+  <!-- ============================================================
+       TAILWIND CSS (CDN) + THEME EXTENSION
+       Palette: deep navy/slate primary, white surfaces, emerald accents
+       ============================================================ -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              50:  '#f0f4fa',
+              100: '#dce5f2',
+              600: '#2c4a7c',
+              700: '#1f3a66',
+              800: '#16294d',
+              900: '#0e1c38',
+              950: '#081226',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: {
+            card: '0 1px 3px rgba(14, 28, 56, 0.08), 0 4px 16px rgba(14, 28, 56, 0.06)',
+            cardHover: '0 2px 6px rgba(14, 28, 56, 0.10), 0 8px 24px rgba(14, 28, 56, 0.10)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Inter font (degrades gracefully to system fonts if offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- ============================================================
+       CUSTOM CSS — only what Tailwind CDN can't express cleanly
+       ============================================================ -->
+  <style>
+    /* Smooth state transitions on service rows */
+    .service-row {
+      transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    /* Custom checkbox: navy border, emerald when checked */
+    .service-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.15rem;
+      height: 1.15rem;
+      flex: none;
+      border: 2px solid #94a3b8;      /* slate-400 */
+      border-radius: 0.375rem;
+      background-color: #ffffff;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 140ms ease, border-color 140ms ease;
+    }
+    .service-checkbox:hover { border-color: #10b981; }         /* emerald-500 */
+    .service-checkbox:focus-visible {
+      outline: 2px solid #10b981;
+      outline-offset: 2px;
+    }
+    .service-checkbox:checked {
+      background-color: #10b981;
+      border-color: #10b981;
+    }
+    .service-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 0.28rem;
+      top: 0.06rem;
+      width: 0.36rem;
+      height: 0.66rem;
+      border: solid #ffffff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* Button loading spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 1.1rem;
+      height: 1.1rem;
+      border: 2.5px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 700ms linear infinite;
+    }
+
+    /* Status banner slide-in */
+    @keyframes bannerIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .banner-in { animation: bannerIn 220ms ease-out; }
+  </style>
+</head>
+
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- ============================================================
+       HEADER — branding + user details
+       ============================================================ -->
+  <header class="bg-navy-900 text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <!-- Logo placeholder -->
+        <div class="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center font-extrabold text-navy-950 text-lg tracking-tight">
+          M
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight leading-tight">
+            Magnum CPA PC <span class="text-emerald-400 font-semibold">&mdash; Service Builder</span>
+          </h1>
+          <p class="text-navy-100/70 text-xs sm:text-sm">Client Service Package Builder</p>
+        </div>
+      </div>
+      <div class="text-left sm:text-right">
+        <p class="text-sm font-medium text-white/90">Prepared by: Glenn</p>
+        <p class="text-xs text-navy-100/60">glenn@magnumcpa.com</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- ============================================================
+         CLIENT INFO
+         ============================================================ -->
+    <section class="bg-white rounded-xl shadow-card p-5 sm:p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-1.5 h-5 rounded-full bg-emerald-500"></span>
+        <h2 class="text-sm font-bold uppercase tracking-wider text-navy-800">Client Information</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="clientName" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Client Name <span class="text-emerald-600">*</span>
+          </label>
+          <input
+            id="clientName"
+            type="text"
+            placeholder="e.g., Jane Smith"
+            autocomplete="off"
+            class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400
+                   focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+          />
+        </div>
+        <div>
+          <label for="businessName" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            Business Name
+          </label>
+          <input
+            id="businessName"
+            type="text"
+            placeholder="e.g., Smith Consulting LLC"
+            autocomplete="off"
+            class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400
+                   focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PACKAGE PRESETS
+         ============================================================ -->
+    <section class="bg-white rounded-xl shadow-card p-5 sm:p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-5 rounded-full bg-emerald-500"></span>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-navy-800">Package Presets</h2>
+        </div>
+        <p id="presetIndicator" class="text-xs font-medium text-slate-500">No preset applied &mdash; custom selection</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="presetButtons">
+        <!-- Preset buttons rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SERVICE GRID — four category cards, rendered by JS
+         ============================================================ -->
+    <section>
+      <div class="flex items-center gap-2 mb-4 px-1">
+        <span class="w-1.5 h-5 rounded-full bg-emerald-500"></span>
+        <h2 class="text-sm font-bold uppercase tracking-wider text-navy-800">Select Services</h2>
+      </div>
+      <div id="serviceGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        <!-- Category cards rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ============================================================
+         LIVE SUMMARY — Current Services vs. Suggested Expansions
+         ============================================================ -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <!-- Current Services -->
+      <div class="bg-white rounded-xl shadow-card p-5 sm:p-6 border-t-4 border-emerald-500">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-navy-800">Current Services</h3>
+          <span id="includedCount" class="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-bold">0</span>
+        </div>
+        <ul id="includedList" class="space-y-2 text-sm"></ul>
+        <p id="includedEmpty" class="text-sm text-slate-400 italic">No services selected yet. Pick a preset or check services above.</p>
+      </div>
+
+      <!-- Suggested Expansions -->
+      <div class="bg-white rounded-xl shadow-card p-5 sm:p-6 border-t-4 border-navy-700">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-navy-800">Expand Your Services</h3>
+          <span id="upsellCount" class="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full bg-navy-100 text-navy-700 text-sm font-bold">0</span>
+        </div>
+        <ul id="upsellList" class="space-y-2 text-sm"></ul>
+        <p id="upsellEmpty" class="text-sm text-slate-400 italic hidden">Every service is included &mdash; this is a full Platinum engagement.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         GENERATE — status banner + submit button
+         ============================================================ -->
+    <section class="bg-white rounded-xl shadow-card p-5 sm:p-6">
+      <div id="statusBanner" class="hidden mb-4 rounded-lg px-4 py-3 text-sm font-medium"></div>
+
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:justify-between">
+        <p class="text-sm text-slate-500">
+          Generates the package summary and sends it to your workflow system.
+        </p>
+        <div class="flex items-center gap-4">
+          <button id="resetBtn" type="button"
+                  class="text-sm font-semibold text-slate-500 hover:text-navy-800 underline underline-offset-4 decoration-slate-300 hover:decoration-navy-600 transition">
+            Reset Form
+          </button>
+          <button id="generateBtn" type="button"
+                  class="inline-flex items-center justify-center gap-2.5 rounded-lg bg-navy-800 hover:bg-navy-700 active:bg-navy-900
+                         text-white font-semibold text-sm px-8 py-3.5 shadow-lg shadow-navy-900/20
+                         transition disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg id="generateIcon" class="w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7z" />
+            </svg>
+            <span id="generateLabel">Generate Package</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-xs text-slate-400 flex flex-col sm:flex-row sm:justify-between gap-1">
+      <span>&copy; 2026 Magnum CPA PC. Internal tool &mdash; not for client distribution.</span>
+      <span>Client Service Package Builder v1.0</span>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       APPLICATION LOGIC
+       ============================================================ -->
+  <script>
+    'use strict';
+
+    /* ==========================================================
+       ★★★ WEBHOOK CONFIGURATION — SWAP THIS URL ★★★
+       Paste your deployed Google Apps Script Web App URL below.
+       ========================================================== */
+    const GOOGLE_WEBHOOK_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+
+    /* ==========================================================
+       SERVICE CATALOG
+       Each service carries an internal `subtasks` array — the
+       firm's behind-the-scenes workflow steps. Subtasks are never
+       shown in the UI; they ship inside the generated payload.
+       ========================================================== */
+    const SERVICE_CATALOG = [
+      {
+        category: 'Tax Services',
+        accent: 'emerald',
+        services: [
+          { id: 'individual-tax-return',   name: 'Individual Tax Return',   subtasks: ['Engagement Letter', 'Organizer Sent', 'Document Intake', 'Preparer Draft', 'CPA Review', 'Client Sign-off', 'E-file'] },
+          { id: 'business-tax-return',     name: 'Business Tax Return',     subtasks: ['Engagement Letter', 'Organizer Sent', 'CPA Review', 'E-file'] },
+          { id: 'quarterly-tax-planning',  name: 'Quarterly Tax Planning',  subtasks: ['Prior-Quarter Data Pull', 'Projection Model Update', 'Planning Meeting Scheduled', 'Strategy Memo Delivered'] },
+          { id: 'tax-projection',          name: 'Tax Projection',          subtasks: ['Current-Year Income Review', 'Scenario Modeling', 'Projection Report Drafted', 'CPA Review'] },
+          { id: 'audit-support',           name: 'Audit Support',           subtasks: ['Audit Notice Review', 'Document Request List', 'Response Package Assembled', 'Representation Filed'] },
+          { id: 'irs-letter-review',       name: 'IRS Letter Review',       subtasks: ['Letter Intake & Scan', 'Issue Assessment', 'Response Drafted', 'Response Mailed & Logged'] },
+          { id: 'estimated-tax-payments',  name: 'Estimated Tax Payments',  subtasks: ['Safe Harbor Calculation', 'Voucher Preparation', 'Payment Reminders Set', 'Payment Confirmation Logged'] },
+        ],
+      },
+      {
+        category: 'Bookkeeping',
+        accent: 'sky',
+        services: [
+          { id: 'monthly-bookkeeping',     name: 'Monthly Bookkeeping',     subtasks: ['Bank Feed Import', 'Transaction Categorization', 'Month-End Close', 'Client Report Sent'] },
+          { id: 'bank-reconciliation',     name: 'Bank Reconciliation',     subtasks: ['Statement Collection', 'Reconcile Accounts', 'Discrepancy Resolution', 'Reconciliation Report Filed'] },
+          { id: 'financial-statements',    name: 'Financial Statements',    subtasks: ['Trial Balance Review', 'Adjusting Entries', 'Statement Compilation', 'CPA Review & Delivery'] },
+          { id: 'quickbooks-cleanup',      name: 'QuickBooks Cleanup',      subtasks: ['File Diagnostic Review', 'Chart of Accounts Restructure', 'Historical Corrections', 'Cleanup Summary Delivered'] },
+          { id: 'catchup-bookkeeping',     name: 'Catch-up Bookkeeping',    subtasks: ['Backlog Scope Assessment', 'Document Collection', 'Period-by-Period Entry', 'Final Reconciliation & Handoff'] },
+        ],
+      },
+      {
+        category: 'Payroll',
+        accent: 'violet',
+        services: [
+          { id: 'payroll-processing',      name: 'Payroll Processing',      subtasks: ['Collect Payroll Data', 'Process Payroll Run', 'Direct Deposit Confirmation', 'Payroll Register Filed'] },
+          { id: 'w2-preparation',          name: 'W-2 Preparation',         subtasks: ['Year-End Wage Verification', 'W-2 Forms Generated', 'Employee Distribution', 'SSA Filing Confirmed'] },
+          { id: '1099-filing',             name: '1099 Filing',             subtasks: ['Vendor W-9 Collection', 'Payment Threshold Review', '1099 Forms Generated', 'IRS E-file Confirmed'] },
+          { id: 'payroll-tax-filing',      name: 'Payroll Tax Filing',      subtasks: ['Liability Calculation', 'Form 941/940 Preparation', 'Deposit Scheduling', 'Filing Confirmation Logged'] },
+        ],
+      },
+      {
+        category: 'Premium Advisory',
+        accent: 'amber',
+        services: [
+          { id: 'irs-resolution',          name: 'IRS Resolution',          subtasks: ['Power of Attorney Filed', 'Transcript Analysis', 'Resolution Strategy Selected', 'Negotiation & Settlement', 'Compliance Monitoring'] },
+          { id: 'business-formation',      name: 'Business Formation',      subtasks: ['Entity Selection Consult', 'State Filing Submitted', 'EIN Obtained', 'S-Corp Election Review', 'Compliance Calendar Set'] },
+          { id: 'sales-tax-filing',        name: 'Sales Tax Filing',        subtasks: ['Nexus Review', 'Taxable Sales Reconciliation', 'Return Preparation', 'Filing & Payment Confirmed'] },
+          { id: 'cfo-services',            name: 'CFO Services',            subtasks: ['KPI Dashboard Setup', 'Monthly Financial Review', 'Cash Flow Forecast', 'Quarterly Strategy Session'] },
+        ],
+      },
+    ];
+
+    /* ==========================================================
+       PACKAGE PRESETS — edit these arrays to retune each tier.
+       Ids must match SERVICE_CATALOG service ids above.
+       ========================================================== */
+    const PRESETS = {
+      Silver: {
+        tagline: 'Core compliance essentials',
+        badge: 'bg-slate-200 text-slate-700',
+        services: [
+          'individual-tax-return', 'business-tax-return', 'estimated-tax-payments',
+          'monthly-bookkeeping', 'bank-reconciliation',
+        ],
+      },
+      Gold: {
+        tagline: 'Compliance + planning + payroll',
+        badge: 'bg-amber-100 text-amber-700',
+        services: [
+          'individual-tax-return', 'business-tax-return', 'estimated-tax-payments',
+          'quarterly-tax-planning', 'tax-projection', 'irs-letter-review',
+          'monthly-bookkeeping', 'bank-reconciliation', 'financial-statements',
+          'payroll-processing', 'w2-preparation', '1099-filing', 'payroll-tax-filing',
+        ],
+      },
+      Platinum: {
+        tagline: 'Full-service, everything included',
+        badge: 'bg-navy-100 text-navy-700',
+        services: SERVICE_CATALOG.flatMap(c => c.services.map(s => s.id)),
+      },
+    };
+
+    // Display order for the preset buttons (best tier first).
+    const PRESET_ORDER = ['Platinum', 'Gold', 'Silver'];
+
+    /* ==========================================================
+       STATE + LOOKUPS
+       ========================================================== */
+    const serviceById = new Map(
+      SERVICE_CATALOG.flatMap(c => c.services.map(s => [s.id, { ...s, category: c.category }]))
+    );
+
+    let activePreset = null; // 'Platinum' | 'Gold' | 'Silver' | null (custom)
+
+    /* ==========================================================
+       RENDERING
+       ========================================================== */
+    const CATEGORY_ACCENTS = {
+      emerald: { bar: 'bg-emerald-500',  text: 'text-emerald-700' },
+      sky:     { bar: 'bg-sky-500',      text: 'text-sky-700' },
+      violet:  { bar: 'bg-violet-500',   text: 'text-violet-700' },
+      amber:   { bar: 'bg-amber-500',    text: 'text-amber-700' },
+    };
+
+    function renderServiceGrid() {
+      const grid = document.getElementById('serviceGrid');
+      grid.innerHTML = '';
+
+      SERVICE_CATALOG.forEach(cat => {
+        const accent = CATEGORY_ACCENTS[cat.accent];
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl shadow-card hover:shadow-cardHover transition-shadow overflow-hidden flex flex-col';
+
+        const header = document.createElement('div');
+        header.className = 'px-5 pt-5 pb-3';
+        header.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-4 rounded-full ${accent.bar}"></span>
+            <h3 class="text-xs font-bold uppercase tracking-widest ${accent.text}">${cat.category}</h3>
+          </div>`;
+        card.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'px-3 pb-4 space-y-1.5 flex-1';
+
+        cat.services.forEach(svc => {
+          const label = document.createElement('label');
+          label.className = 'service-row group flex items-center gap-3 rounded-lg border border-transparent px-2.5 py-2.5 cursor-pointer hover:bg-slate-50';
+          label.dataset.rowFor = svc.id;
+          label.innerHTML = `
+            <input type="checkbox" class="service-checkbox" data-service-id="${svc.id}" />
+            <span class="text-sm font-medium text-slate-700 leading-snug select-none">${svc.name}</span>`;
+          list.appendChild(label);
+        });
+
+        card.appendChild(list);
+        grid.appendChild(card);
+      });
+    }
+
+    function renderPresetButtons() {
+      const wrap = document.getElementById('presetButtons');
+      wrap.innerHTML = '';
+
+      PRESET_ORDER.forEach(name => {
+        const preset = PRESETS[name];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.preset = name;
+        btn.className = 'preset-btn text-left rounded-xl border-2 border-slate-200 hover:border-emerald-400 bg-white px-4 py-3.5 transition group';
+        btn.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-navy-900">${name}</span>
+            <span class="text-[0.65rem] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${preset.badge}">${preset.services.length} services</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">${preset.tagline}</p>`;
+        btn.addEventListener('click', () => applyPreset(name));
+        wrap.appendChild(btn);
+      });
+    }
+
+    /* ==========================================================
+       SELECTION LOGIC
+       ========================================================== */
+    function allCheckboxes() {
+      return Array.from(document.querySelectorAll('.service-checkbox'));
+    }
+
+    function getSelectedIds() {
+      return allCheckboxes().filter(cb => cb.checked).map(cb => cb.dataset.serviceId);
+    }
+
+    function applyPreset(name) {
+      const ids = new Set(PRESETS[name].services);
+      allCheckboxes().forEach(cb => { cb.checked = ids.has(cb.dataset.serviceId); });
+      activePreset = name;
+      refreshUI();
+    }
+
+    function updatePresetIndicator() {
+      const indicator = document.getElementById('presetIndicator');
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        const isActive = btn.dataset.preset === activePreset;
+        btn.classList.toggle('border-emerald-500', isActive);
+        btn.classList.toggle('bg-emerald-50', isActive);
+        btn.classList.toggle('border-slate-200', !isActive);
+        btn.classList.toggle('bg-white', !isActive);
+      });
+      indicator.textContent = activePreset
+        ? `${activePreset} preset applied`
+        : 'No preset applied — custom selection';
+      indicator.className = activePreset
+        ? 'text-xs font-bold text-emerald-600'
+        : 'text-xs font-medium text-slate-500';
+    }
+
+    function updateRowStyles() {
+      allCheckboxes().forEach(cb => {
+        const row = cb.closest('.service-row');
+        row.classList.toggle('bg-emerald-50', cb.checked);
+        row.classList.toggle('border-emerald-300', cb.checked);
+        row.classList.toggle('border-transparent', !cb.checked);
+      });
+    }
+
+    function updateSummary() {
+      const selected = new Set(getSelectedIds());
+      const included = [];
+      const upsell = [];
+
+      SERVICE_CATALOG.forEach(cat => {
+        cat.services.forEach(svc => {
+          (selected.has(svc.id) ? included : upsell).push(svc);
+        });
+      });
+
+      const includedList = document.getElementById('includedList');
+      const upsellList = document.getElementById('upsellList');
+      includedList.innerHTML = included.map(svc => `
+        <li class="flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-emerald-500 flex-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <span class="font-medium text-slate-700">${svc.name}</span>
+        </li>`).join('');
+      upsellList.innerHTML = upsell.map(svc => `
+        <li class="flex items-center gap-2.5">
+          <svg class="w-4 h-4 text-navy-600 flex-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="text-slate-600">${svc.name}</span>
+        </li>`).join('');
+
+      document.getElementById('includedCount').textContent = included.length;
+      document.getElementById('upsellCount').textContent = upsell.length;
+      document.getElementById('includedEmpty').classList.toggle('hidden', included.length > 0);
+      document.getElementById('upsellEmpty').classList.toggle('hidden', upsell.length > 0);
+    }
+
+    function refreshUI() {
+      updatePresetIndicator();
+      updateRowStyles();
+      updateSummary();
+    }
+
+    /* ==========================================================
+       DATA PACKAGING + WEBHOOK SUBMISSION
+       ========================================================== */
+    function buildPayload() {
+      const selectedIds = getSelectedIds();
+      const selected = new Set(selectedIds);
+
+      const currentServices = selectedIds.map(id => serviceById.get(id).name);
+
+      // Flatten each chosen service's internal workflow into one tagged list.
+      const internalSubtasks = selectedIds.flatMap(id => {
+        const svc = serviceById.get(id);
+        return svc.subtasks.map(task => ({ service: svc.name, task }));
+      });
+
+      const suggestedExpansions = Array.from(serviceById.values())
+        .filter(svc => !selected.has(svc.id))
+        .map(svc => svc.name);
+
+      return {
+        clientName: document.getElementById('clientName').value.trim(),
+        businessName: document.getElementById('businessName').value.trim(),
+        packagePreset: activePreset || 'Custom',
+        currentServices,
+        internalSubtasks,
+        suggestedExpansions,
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
+    function showBanner(type, message) {
+      const banner = document.getElementById('statusBanner');
+      const styles = {
+        success: 'bg-emerald-50 border border-emerald-300 text-emerald-800',
+        error:   'bg-red-50 border border-red-300 text-red-700',
+        warn:    'bg-amber-50 border border-amber-300 text-amber-800',
+      };
+      banner.className = `banner-in mb-4 rounded-lg px-4 py-3 text-sm font-medium ${styles[type]}`;
+      banner.textContent = message;
+      banner.classList.remove('hidden');
+      if (type === 'success') {
+        setTimeout(() => banner.classList.add('hidden'), 6000);
+      }
+    }
+
+    function setLoading(isLoading) {
+      const btn = document.getElementById('generateBtn');
+      const icon = document.getElementById('generateIcon');
+      const label = document.getElementById('generateLabel');
+      btn.disabled = isLoading;
+      icon.classList.toggle('hidden', isLoading);
+      label.textContent = isLoading ? 'Sending…' : 'Generate Package';
+      if (isLoading) {
+        const spin = document.createElement('span');
+        spin.className = 'spinner';
+        spin.id = 'btnSpinner';
+        btn.prepend(spin);
+      } else {
+        document.getElementById('btnSpinner')?.remove();
+      }
+    }
+
+    async function generatePackage() {
+      const payload = buildPayload();
+
+      if (!payload.clientName) {
+        showBanner('warn', 'Please enter a Client Name before generating the package.');
+        document.getElementById('clientName').focus();
+        return;
+      }
+      if (payload.currentServices.length === 0) {
+        showBanner('warn', 'Select at least one service (or apply a preset) before generating.');
+        return;
+      }
+
+      // Friendly guard while the webhook isn't wired up yet.
+      if (GOOGLE_WEBHOOK_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+        console.log('Service package payload (webhook not configured):', payload);
+        showBanner('warn', 'Webhook URL not configured yet — payload was built successfully and logged to the browser console. Set GOOGLE_WEBHOOK_URL at the top of the script to enable sending.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // Google Apps Script web apps can't answer CORS preflight requests,
+        // so we send as text/plain with mode "no-cors". The script still
+        // receives the full JSON via e.postData.contents.
+        await fetch(GOOGLE_WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload),
+        });
+        showBanner('success', `Package for ${payload.clientName} sent successfully — ${payload.currentServices.length} current services, ${payload.suggestedExpansions.length} suggested expansions.`);
+      } catch (err) {
+        console.error('Webhook submission failed:', err);
+        showBanner('error', 'Could not reach the webhook. Check your connection and the GOOGLE_WEBHOOK_URL, then try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('clientName').value = '';
+      document.getElementById('businessName').value = '';
+      allCheckboxes().forEach(cb => { cb.checked = false; });
+      activePreset = null;
+      document.getElementById('statusBanner').classList.add('hidden');
+      refreshUI();
+    }
+
+    /* ==========================================================
+       INIT
+       ========================================================== */
+    renderServiceGrid();
+    renderPresetButtons();
+    refreshUI();
+
+    // Manual checkbox changes break out of any preset into "Custom".
+    document.getElementById('serviceGrid').addEventListener('change', e => {
+      if (e.target.classList.contains('service-checkbox')) {
+        activePreset = null;
+        refreshUI();
+      }
+    });
+
+    document.getElementById('generateBtn').addEventListener('click', generatePackage);
+    document.getElementById('resetBtn').addEventListener('click', resetForm);
+  </script>
+</body>
+</html>
