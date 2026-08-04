@@ -951,10 +951,11 @@
       lastGeneratedPayload = payload;
       document.getElementById('postGenerateActions').classList.remove('hidden');
 
-      // Friendly guard while the webhook isn't wired up yet.
+      // No webhook configured — that's fine, the in-app actions below
+      // (Send Client Brochure / Notify Team / Download Package File)
+      // are the primary way to get this package out.
       if (GOOGLE_WEBHOOK_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-        console.log('Service package payload (webhook not configured):', payload);
-        showBanner('warn', 'Webhook URL not configured yet — payload was built successfully and logged to the browser console. Set GOOGLE_WEBHOOK_URL at the top of the script to enable sending.');
+        showBanner('success', `Package for ${payload.clientName} is ready — use "Send Client Brochure" or "Download Package File" below to share it.`);
         return;
       }
 
