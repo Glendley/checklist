@@ -1,0 +1,30 @@
+Windows Registry Editor Version 5.00
+
+; ============================================================
+; One-time setup: registers the "magnumpkg:" link protocol so
+; the Service Package Builder webpage can hand off to
+; ComposeOutlookDraft.vbs when you click "Open in Outlook".
+;
+; This only writes to HKEY_CURRENT_USER (your account only) —
+; no admin rights needed, and nothing outside your own profile
+; is touched. Double-click this file once, confirm the two
+; prompts (Registry Editor, then Windows SmartScreen if it
+; appears), and you're done.
+;
+; To undo: delete the "magnumpkg" key under
+; HKEY_CURRENT_USER\Software\Classes in regedit.
+; ============================================================
+
+[HKEY_CURRENT_USER\Software\Classes\magnumpkg]
+@="URL:Magnum CPA Package Protocol"
+"URL Protocol"=""
+
+[HKEY_CURRENT_USER\Software\Classes\magnumpkg\DefaultIcon]
+@="wscript.exe,1"
+
+[HKEY_CURRENT_USER\Software\Classes\magnumpkg\shell]
+
+[HKEY_CURRENT_USER\Software\Classes\magnumpkg\shell\open]
+
+[HKEY_CURRENT_USER\Software\Classes\magnumpkg\shell\open\command]
+@="wscript.exe \"C:\\Users\\Glenn\\Documents\\Claude\\Checklist\\tools\\ComposeOutlookDraft.vbs\" \"%1\""

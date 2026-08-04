@@ -714,6 +714,35 @@
       showBanner('warn', 'That message was too long for your mail app — its content was copied to your clipboard instead.');
     }
 
+    /* Downloads a small fixed-format text file the local ComposeOutlookDraft.vbs
+       helper reads to build a real Outlook draft with the PDF attached (see
+       tools/ComposeOutlookDraft.vbs + tools/install-outlook-protocol.reg).
+       A plain text file with a simple TO:/CC:/SUBJECT:/BODY_START../BODY_END
+       block is far simpler and more robust for VBScript to parse than trying
+       to round-trip subject/body through a URI (Windows URI length limits +
+       painful UTF-8 percent-decoding in classic VBScript). */
+    function downloadPackageMeta(payload, emailOpts) {
+      const content =
+        `TO:${emailOpts.to || ''}\n` +
+        `CC:${emailOpts.cc || ''}\n` +
+        `SUBJECT:${emailOpts.subject || ''}\n` +
+        `BODY_START\n${emailOpts.body || ''}\nBODY_END\n`;
+
+      const safeClientName = (payload.clientName || 'client').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '');
+      const dateStamp = new Date(payload.generatedAt).toISOString().slice(0, 10);
+      const filename = `Service-Package-${safeClientName}-${dateStamp}.meta.txt`;
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
     function openModal(innerHtml) {
       const overlay = document.createElement('div');
       overlay.className = 'fixed inset-0 z-50 flex items-center justify-center bg-navy-950/60 backdrop-blur-sm p-4';
@@ -756,25 +785,50 @@
                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500">${escapeHtml(opts.body || '')}</textarea>
           </div>
         </div>
-        <div class="flex justify-end gap-3 mt-5">
-          <button id="se-cancel" class="text-sm font-semibold text-slate-500 hover:text-navy-800 px-4 py-2 transition">Cancel</button>
-          <button id="se-mailto" class="inline-flex items-center gap-2 rounded-lg bg-navy-800 hover:bg-navy-700 text-white font-semibold text-sm px-5 py-2.5 transition">
-            Open in Outlook
-          </button>
+        <div class="flex items-center justify-between gap-3 mt-5">
+          ${opts.attachPayload ? `
+          <button id="se-mailto-fallback" class="text-xs font-medium text-slate-400 hover:text-slate-600 underline underline-offset-2 transition">
+            Open blank email instead
+          </button>` : '<span></span>'}
+          <div class="flex gap-3">
+            <button id="se-cancel" class="text-sm font-semibold text-slate-500 hover:text-navy-800 px-4 py-2 transition">Cancel</button>
+            <button id="se-mailto" class="inline-flex items-center gap-2 rounded-lg bg-navy-800 hover:bg-navy-700 text-white font-semibold text-sm px-5 py-2.5 transition">
+              Open in Outlook
+            </button>
+          </div>
         </div>
       `);
       overlay.querySelector('#se-cancel').addEventListener('click', () => overlay.remove());
-      overlay.querySelector('#se-mailto').addEventListener('click', () => {
-        // Browsers can't attach a file to a mailto: draft — the closest
-        // available option is to hand the user a downloaded PDF right as
-        // Outlook opens, ready to drag into the message (see opts.note).
-        if (opts.attachPayload) downloadPackagePdf(opts.attachPayload);
-        openMailto({
+
+      function currentEmailOpts() {
+        return {
           to: overlay.querySelector('#se-to').value.trim(),
           cc: overlay.querySelector('#se-cc').value.trim(),
           subject: overlay.querySelector('#se-subject').value,
           body: overlay.querySelector('#se-body').value,
-        });
+        };
+      }
+
+      overlay.querySelector('#se-mailto').addEventListener('click', () => {
+        const emailOpts = currentEmailOpts();
+        if (opts.attachPayload) {
+          // Browsers can't attach a file to a mailto: draft, so hand off to
+          // the local ComposeOutlookDraft.vbs helper via the "magnumpkg:"
+          // protocol instead — it builds the Outlook draft itself, with the
+          // PDF already attached. Requires the one-time local setup in
+          // tools/install-outlook-protocol.reg; falls back to a plain
+          // mailto (see "Open blank email instead") if that isn't done yet.
+          downloadPackagePdf(opts.attachPayload);
+          downloadPackageMeta(opts.attachPayload, emailOpts);
+          window.location.href = 'magnumpkg://open';
+        } else {
+          openMailto(emailOpts);
+        }
+        overlay.remove();
+      });
+
+      overlay.querySelector('#se-mailto-fallback')?.addEventListener('click', () => {
+        openMailto(currentEmailOpts());
         overlay.remove();
       });
     }
@@ -825,7 +879,7 @@
         subject: brochureSubject(payload),
         body,
         attachPayload: payload,
-        note: 'The package PDF will download automatically when you click "Open in Outlook". A webpage can\'t auto-attach files to an email, so drag the downloaded PDF into the draft before sending.',
+        note: '"Open in Outlook" creates a draft with the PDF already attached, via the Magnum Package helper installed on this PC (see tools/ in the project folder). Not set up yet, or on a different computer? Use "Open blank email instead" and attach the downloaded PDF yourself.',
       });
     }
 
