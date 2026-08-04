@@ -247,16 +247,30 @@
       <div id="statusBanner" class="hidden mb-4 rounded-lg px-4 py-3 text-sm font-medium"></div>
 
       <!-- Ping / Notify actions — appear once a package has been generated -->
-      <div id="postGenerateActions" class="hidden mb-4 pb-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
+      <div id="postGenerateActions" class="hidden mb-4 pb-4 border-b border-slate-100 flex flex-col sm:flex-row flex-wrap gap-3">
         <button id="brochureBtn" type="button"
                 class="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-navy-700 text-navy-800
                        hover:bg-navy-50 font-semibold text-sm px-5 py-2.5 transition">
-          <span aria-hidden="true">📧</span> Send Client Brochure
+          <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
+          </svg>
+          Send Client Brochure
         </button>
         <button id="teamNotifyBtn" type="button"
                 class="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-emerald-500 text-emerald-700
                        hover:bg-emerald-50 font-semibold text-sm px-5 py-2.5 transition">
-          <span aria-hidden="true">🔔</span> Notify Team &mdash; Package Availed
+          <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          Notify Team &mdash; Package Availed
+        </button>
+        <button id="downloadFileBtn" type="button"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-slate-300 text-slate-700
+                       hover:bg-slate-50 font-semibold text-sm px-5 py-2.5 transition">
+          <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
+          </svg>
+          Download Package File
         </button>
       </div>
 
@@ -773,7 +787,7 @@
         `Please let us know if you have any questions.\n\nWarm regards,\nMagnum CPA PC`;
 
       openSendEmailModal({
-        heading: '📧 Send Client Brochure',
+        heading: 'Send Client Brochure',
         to: document.getElementById('clientEmail').value.trim(),
         subject: `Your Magnum CPA Service Package — ${payload.clientName}`,
         body,
@@ -793,11 +807,57 @@
         `Generated: ${new Date(payload.generatedAt).toLocaleString()}`;
 
       openSendEmailModal({
-        heading: '🔔 Notify Team — Package Availed',
+        heading: 'Notify Team — Package Availed',
         to: TEAM_NOTIFY_EMAIL,
         subject: `[Magnum CPA Service Builder] Package generated for ${payload.clientName}`,
         body,
       });
+    }
+
+    /* ==========================================================
+       PACKAGE FILE — a standalone, downloadable summary of the
+       generated package, separate from the in-app email bodies
+       above, so it can be attached to an email or filed as-is.
+       ========================================================== */
+    function buildPackageFileContent(payload) {
+      const rule = '-'.repeat(48);
+      const included = payload.currentServices.map(s => `  • ${s.name} — ${s.price}`).join('\n') || '  (none selected)';
+      const expansions = payload.suggestedExpansions.map(s => `  • ${s.name} — ${s.price}`).join('\n');
+
+      const lines = [
+        'MAGNUM CPA PC — SERVICE PACKAGE SUMMARY',
+        '='.repeat(48),
+        '',
+        `Client: ${payload.clientName}`,
+      ];
+      if (payload.businessName) lines.push(`Business: ${payload.businessName}`);
+      lines.push(`Package: ${payload.packagePreset}`, '', 'INCLUDED SERVICES', rule, included, '');
+
+      const investment = investmentLines(payload).trim();
+      if (investment) lines.push(investment, '');
+
+      if (expansions) lines.push('SUGGESTED EXPANSIONS', rule, expansions, '');
+
+      lines.push(rule, `Generated: ${new Date(payload.generatedAt).toLocaleString()}`, 'Magnum CPA PC · Sacramento, California');
+
+      return lines.join('\n');
+    }
+
+    function downloadPackageFile(payload) {
+      const content = buildPackageFileContent(payload);
+      const safeClientName = (payload.clientName || 'client').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '');
+      const dateStamp = new Date(payload.generatedAt).toISOString().slice(0, 10);
+      const filename = `Service-Package-${safeClientName}-${dateStamp}.txt`;
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     }
 
     /* ==========================================================
@@ -952,6 +1012,9 @@
     });
     document.getElementById('teamNotifyBtn').addEventListener('click', () => {
       if (lastGeneratedPayload) promptTeamNotify(lastGeneratedPayload);
+    });
+    document.getElementById('downloadFileBtn').addEventListener('click', () => {
+      if (lastGeneratedPayload) downloadPackageFile(lastGeneratedPayload);
     });
   </script>
 </body>
