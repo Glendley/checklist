@@ -270,7 +270,7 @@
           <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
           </svg>
-          Download Package File
+          Download Package PDF
         </button>
       </div>
 
@@ -303,6 +303,14 @@
       <span>Client Service Package Builder v1.0</span>
     </div>
   </footer>
+
+  <!-- ============================================================
+       PACKAGE PDF — library + design template (separate files so
+       the PDF's look can be edited independently of the app logic)
+       ============================================================ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="pkg-pdf-assets.js"></script>
+  <script src="package-template.js"></script>
 
   <!-- ============================================================
        APPLICATION LOGIC
@@ -744,7 +752,7 @@
         <div class="flex justify-end gap-3 mt-5">
           <button id="se-cancel" class="text-sm font-semibold text-slate-500 hover:text-navy-800 px-4 py-2 transition">Cancel</button>
           <button id="se-mailto" class="inline-flex items-center gap-2 rounded-lg bg-navy-800 hover:bg-navy-700 text-white font-semibold text-sm px-5 py-2.5 transition">
-            Open in Mail App
+            Open in Outlook
           </button>
         </div>
       `);
@@ -815,50 +823,12 @@
     }
 
     /* ==========================================================
-       PACKAGE FILE — a standalone, downloadable summary of the
-       generated package, separate from the in-app email bodies
-       above, so it can be attached to an email or filed as-is.
+       PACKAGE PDF — the "Download Package PDF" button hands the
+       generated payload to downloadPackagePdf(), defined in the
+       separate package-template.js file (loaded above). That file
+       owns the document's visual design; nothing here needs to
+       change when that design changes.
        ========================================================== */
-    function buildPackageFileContent(payload) {
-      const rule = '-'.repeat(48);
-      const included = payload.currentServices.map(s => `  • ${s.name} — ${s.price}`).join('\n') || '  (none selected)';
-      const expansions = payload.suggestedExpansions.map(s => `  • ${s.name} — ${s.price}`).join('\n');
-
-      const lines = [
-        'MAGNUM CPA PC — SERVICE PACKAGE SUMMARY',
-        '='.repeat(48),
-        '',
-        `Client: ${payload.clientName}`,
-      ];
-      if (payload.businessName) lines.push(`Business: ${payload.businessName}`);
-      lines.push(`Package: ${payload.packagePreset}`, '', 'INCLUDED SERVICES', rule, included, '');
-
-      const investment = investmentLines(payload).trim();
-      if (investment) lines.push(investment, '');
-
-      if (expansions) lines.push('SUGGESTED EXPANSIONS', rule, expansions, '');
-
-      lines.push(rule, `Generated: ${new Date(payload.generatedAt).toLocaleString()}`, 'Magnum CPA PC · Sacramento, California');
-
-      return lines.join('\n');
-    }
-
-    function downloadPackageFile(payload) {
-      const content = buildPackageFileContent(payload);
-      const safeClientName = (payload.clientName || 'client').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '');
-      const dateStamp = new Date(payload.generatedAt).toISOString().slice(0, 10);
-      const filename = `Service-Package-${safeClientName}-${dateStamp}.txt`;
-
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    }
 
     /* ==========================================================
        DATA PACKAGING + WEBHOOK SUBMISSION
@@ -952,10 +922,10 @@
       document.getElementById('postGenerateActions').classList.remove('hidden');
 
       // No webhook configured — that's fine, the in-app actions below
-      // (Send Client Brochure / Notify Team / Download Package File)
+      // (Send Client Brochure / Notify Team / Download Package PDF)
       // are the primary way to get this package out.
       if (GOOGLE_WEBHOOK_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-        showBanner('success', `Package for ${payload.clientName} is ready — use "Send Client Brochure" or "Download Package File" below to share it.`);
+        showBanner('success', `Package for ${payload.clientName} is ready — use "Send Client Brochure" or "Download Package PDF" below to share it.`);
         return;
       }
 
@@ -1015,7 +985,7 @@
       if (lastGeneratedPayload) promptTeamNotify(lastGeneratedPayload);
     });
     document.getElementById('downloadFileBtn').addEventListener('click', () => {
-      if (lastGeneratedPayload) downloadPackageFile(lastGeneratedPayload);
+      if (lastGeneratedPayload) downloadPackagePdf(lastGeneratedPayload);
     });
   </script>
 </body>
