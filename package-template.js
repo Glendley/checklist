@@ -13,10 +13,10 @@
      - pkg-pdf-assets.js        -> PKG_PDF_ASSETS (base64 images)
 
    Input: a `payload` object shaped like index.html's buildPayload()
-   output — clientName, businessName, packagePreset, packagePrice,
-   currentServices[{name,price,billing}], suggestedExpansions[...],
-   estimatedMonthlyTotal, estimatedQuarterlyTotal, estimatedOneTimeTotal,
-   customPricedItemCount, generatedAt.
+   output — clientName, businessName, packagePreset, paymentFrequency,
+   recurringLabel, recurringAmount, currentServices[{name,price,billing}],
+   suggestedExpansions[...], estimatedOneTimeTotal, customPricedItemCount,
+   generatedAt.
    ============================================================ */
 
 const PKG_PDF_COLORS = {
@@ -43,17 +43,16 @@ function pkgPdfFormatUsd(n) {
   return '$' + Number(n).toLocaleString('en-US');
 }
 
-/* Mirrors the "flat bundle rate vs. itemized à-la-carte" display rule
-   used in index.html's summary panel and emails, but only reads
-   already-computed payload fields — no pricing logic lives here. */
+/* Mirrors the billing summary shown in index.html's summary panel and
+   emails, but only reads already-computed payload fields — no pricing
+   or payment-frequency conversion logic lives here. */
 function pkgPdfInvestmentRows(payload) {
   const rows = [];
-  if (payload.packagePrice) {
-    rows.push(['Bundled Package Rate', payload.packagePrice]);
-  } else {
-    if (payload.estimatedMonthlyTotal > 0) rows.push(['Estimated Monthly', pkgPdfFormatUsd(payload.estimatedMonthlyTotal) + '/mo']);
-    if (payload.estimatedQuarterlyTotal > 0) rows.push(['Estimated Quarterly', pkgPdfFormatUsd(payload.estimatedQuarterlyTotal) + '/qtr']);
-    if (payload.estimatedOneTimeTotal > 0) rows.push(['One-Time Fees', pkgPdfFormatUsd(payload.estimatedOneTimeTotal)]);
+  if (payload.recurringAmount) {
+    rows.push([`${payload.recurringLabel} (${payload.paymentFrequency})`, payload.recurringAmount]);
+  }
+  if (payload.estimatedOneTimeTotal > 0) {
+    rows.push(['One-Time Fees', pkgPdfFormatUsd(payload.estimatedOneTimeTotal)]);
   }
   if (payload.customPricedItemCount > 0) {
     rows.push(['Custom-Quoted Items', payload.customPricedItemCount + ' (quoted at onboarding)']);
